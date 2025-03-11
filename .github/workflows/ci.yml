@@ -1,0 +1,83 @@
+name: CI
+# Main CI pipeline of the repository.
+#
+# Overview:
+# Lint --> test doc build -\
+#      \-> test code      ---> deploy docs (*) -> release (**)
+#
+#  (*): only on push of primary branches + release tags
+# (**): only for release version tags (vX.Y.Z)
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ["v*.*.*"]
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  lint:
+    # run general checks that do not require installing the package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install poe and pre-commit
+        run: pip install poethepoet pre-commit
+
+      # NOTE: using custom cache, to include pre-commit linters + deps
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pre-commit
+            ~/.cache/pip
+          key: ${{ hashFiles('.pre-commit-config.yaml') }}-pre-commit
+
+      - name: Check that all static analysis tools run without errors
+        run: |
+          poetry install
+          poetry run poe lint --all-files
+
+  test:
+    # run tests with different OS and Python combinations
+    needs: lint
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+
+      - name: Check that tests complete without errors
+        run: |
+          poetry install
+          poetry run poe test -vv
+
+  publish:
+    # if a version tag is pushed + tests succeeded -> do release
+    needs: test
+    if: startswith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write # for GitHub release
+      id-token: write # for PyPI release
+
+    uses: "./.github/workflows/release.yml"
+    with:
+      to_github: false
+      to_test_pypi: false
+      to_pypi: true

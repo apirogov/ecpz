@@ -1,0 +1,83 @@
+[project]
+name = "ecpz"
+version = "0.0.1"
+description = "Evaluate C++ using Python and Zig"
+authors = [
+    {name = "Anton Pirogov",email = "apirogov@users.noreply.github.com"}
+]
+readme = "README.md"
+license = { text = "MIT" }
+keywords = [
+    "python",
+    "clang",
+    "c++",
+]
+
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: C++",
+    "Topic :: Software Development :: Build Tools",
+]
+
+requires-python = ">=3.10"
+dependencies = [
+    "typer (>=0.15.2,<0.16.0)",
+    "zig-bin (>=0.14.0,<0.15.0)",
+    "dotenv (>=0.9.9,<0.10.0)"
+]
+
+[project.urls]
+Repository = "https://github.com/apirogov/ecpz"
+
+[project.scripts]
+ecpz = 'ecpz.cli:app'
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{include = "ecpz", from = "src"}]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
+poethepoet = "^0.33.0"
+
+[tool.poe.tasks]
+init-dev = { shell = "pre-commit install" }
+lint = "pre-commit run"
+test = "pytest"
+
+[tool.ruff.lint]
+extend-select = ["I", "D", "B", "S", "W"]
+ignore = ["D203", "D213", "D407", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/{tests,docs}/*" = ["ALL"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "--cov-report=term-missing:skip-covered"
+filterwarnings = [
+# Example:
+# "ignore::DeprecationWarning:importlib_metadata.*",
+]
+
+[tool.coverage.run]
+source = ["somesy"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
