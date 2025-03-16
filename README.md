@@ -77,3 +77,7 @@ override equivalent environment variables.
 - [ ] integration into C++ using e.g. [subprocess.h](https://github.com/sheredom/subprocess.h) (i.e. compile C++ anywhere you have Python)
 - [ ] Line-based and JSON batch mode (series of expressions that are evaluated and returned back)
 - [ ] string processing mode (transform text/lines/tokens like awk but with a C++ function)
+
+## Acknowledgements
+
+Thanks to [sheredom](https://github.com/sheredom) for creating [subprocess.h](https://github.com/sheredom/subprocess.h)

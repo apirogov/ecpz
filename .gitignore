@@ -1,5 +1,5 @@
-*.hpp
-*.cpp
+/*.hpp
+/*.cpp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

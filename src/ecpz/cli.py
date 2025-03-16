@@ -1,5 +1,6 @@
 """Implementation of ecpz CLI commands."""
 
+import importlib.resources as pkg_resources
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,14 @@ def read_input(file_path: Optional[Path] = None) -> str:
     return content
 
 
+def get_own_directory():
+    """Return directory to be passed as include directory.
+
+    Allows to use e.g. `#include "ecpz/subprocess.hpp"`
+    """
+    return pkg_resources.files(__package__).resolve().parent
+
+
 def compile_and_run(code: str, args: CommonArgs) -> str:
     """Compile and run the given test code inside a temporary directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -47,6 +56,7 @@ def compile_and_run(code: str, args: CommonArgs) -> str:
 
         compile_cmd = [sys.executable, "-m", "zig", "c++"]
         compile_cmd += args.clang_args
+        compile_cmd += [f"-I{get_own_directory()}"]
         compile_cmd += ["-o", f"{binary_file_path}", f"{source_file_path}"]
 
         if args.verbose:
@@ -121,7 +131,12 @@ def std_print(
     ctx: typer.Context,
     fmt: str,
     exprs: list[str],
-    no_newline: bool = False,
+    no_newline: Annotated[
+        bool,
+        typer.Option(
+            "-n", "--no-newline", help="Do not add a newline to the end of the output."
+        ),
+    ] = False,
 ):
     """Evaluate C++23 expressions and print result using std::print(ln)."""
     ctx.obj.clang_args += ["-std=c++23"]
