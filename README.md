@@ -1,9 +1,12 @@
 # ecpz - **E**valuate **C**++ using **P**ython and **Z**ig
 
 Do you need to evaluate some simple C++ code from inside your application,
-it should work cross-platform (Linux, Mac and Windows) without causing a headache?
+and it should work cross-platform (Linux, Mac and Windows) without causing a headache?
 
-*Easy-peasy with `ecpz`!*
+You've seen it all, [quine-relay](https://github.com/mame/quine-relay) stopped
+being amusing years ago, and you feel the itch for something new?
+
+No problem, *easy-peasy with `ecpz`!*
 
 ----
 
@@ -72,12 +75,63 @@ You can set the `ECPZ_PRELUDE` environment variable to the path of your custom
 header to make it always included by default. Note that as usual, CLI arguments
 override equivalent environment variables.
 
-## Ideas And Roadmap
+### Creating a Quine
 
-- [ ] integration into C++ using e.g. [subprocess.h](https://github.com/sheredom/subprocess.h) (i.e. compile C++ anywhere you have Python)
-- [ ] Line-based and JSON batch mode (series of expressions that are evaluated and returned back)
-- [ ] string processing mode (transform text/lines/tokens like awk but with a C++ function)
+Usually, using I/O to let code open itself directly is forbidden and considered bad sportsmanship.
+Everybody agrees that the following things are clear cases of cheating:
+
+* reading a hard-coded string filename
+* using the `argv[0]` trick to reflect back the name of the current file/executable
+* reading the file using some compile- or runtime reflection capabilities of the programming language
+* adding and using a special `quine` command in a custom programming language or environment
+
+We will do none of these things. Create some source file `FILE` with the following content:
+
+```cpp
+#include "ecpz/subprocess.hpp"
+int main(int i, char** a) {
+    using b = std::istreambuf_iterator<char>; using c = std::string;
+    auto d = [](auto e){ std::ifstream f(e, std::ios::binary); return c(b(f), b()); };
+    std::vector<c> e(i+3, a[i-1]); e[0]="ecpz"; e[1]="run";
+    auto f = i%2 == 0 ? subprocess::run(e).output : d(a[i-1]);
+    std::cout.write(f.c_str(), f.size());
+}
+```
+
+Now run it with `ecpz run FILE FILE` and convince yourself that we do not cheat in
+such despicable and reprehensible ways as the ones listed above!
+
+<details>
+  <summary>Spoiler</summary>
+
+  Nobody ever said that we cannot just...
+
+  * run a C++ source file through `ecpz`,
+    * which uses a Python package,
+      * which provides the `zig` toolchain,
+        * which provides `clang`,
+    * to compile and then run the program, which
+      * runs its arguments through `ecpz`,
+        * compiling and then running the same program, which now finally
+          * prints the file passed to it as the argument
+
+  Or, at least *I* did not get the memo that this is illegal.
+  In that case I apologize for wasting your time.
+
+  But even *if* this is still cheating -
+  isn't cheating in glorious ways not also a form of *art*?
+
+</details>
+
+## Limitations
+
+The following issues are fixable, i.e. only a matter of more effort and time:
+
+* currently only synchronous execution is supported, no I/O buffering or streaming
+* currently it is not possible to pipe input data into `ecpz run` to pass it as stdin
 
 ## Acknowledgements
 
-Thanks to [sheredom](https://github.com/sheredom) for creating [subprocess.h](https://github.com/sheredom/subprocess.h)
+Thanks to [sheredom](https://github.com/sheredom)
+for creating [subprocess.h](https://github.com/sheredom/subprocess.h),
+the only true header-only C(++) subprocess library I could find!

@@ -1,6 +1,6 @@
 [project]
 name = "ecpz"
-version = "0.0.1"
+version = "0.1.0"
 description = "Evaluate C++ using Python and Zig"
 authors = [
     {name = "Anton Pirogov",email = "apirogov@users.noreply.github.com"}

@@ -46,6 +46,15 @@ Result run(std::vector<std::string> args, std::string const& input = "") {
 
         return tokens;
     };
+    // std::string::{starts,ends}_with backports (for compatibility with older standards)
+    auto const starts_with = [](std::string const& str, std::string const& prefix) {
+        if (prefix.size() > str.size()) return false;
+        return std::equal(prefix.begin(), prefix.end(), str.begin());
+    };
+    auto const ends_with = [](std::string const& str, std::string const& suffix) {
+        if (suffix.size() > str.size()) return false;
+        return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
+    };
 
     /// Check whether a path is an executable.
     auto const is_executable = [](std::filesystem::path const& filepath) {
@@ -109,7 +118,7 @@ Result run(std::vector<std::string> args, std::string const& input = "") {
     if (auto const& path = resolve_executable(args[0])) {
         auto const filepath = *path;
 #ifdef _WIN32
-    if (!filepath.ends_with(".exe")) {
+    if (!ends_with(filepath, ".exe")) {
         // We're on Windows + given command is not an .exe (i.e. not directly executable).
         //
         // We need to figure out the correct interpreter for the script.
@@ -135,7 +144,7 @@ Result run(std::vector<std::string> args, std::string const& input = "") {
             throw std::runtime_error("Could not read first line of script: " + filepath);
         }
         file.close();
-        if(!firstLine.starts_with("#!") || !firstLine.ends_with(".exe")) {
+        if(!starts_with(firstLine, "#!") || !ends_with(firstLine, ".exe")) {
             throw std::runtime_error("Expected #![...].exe in first line, found: " + firstLine);
         }
         // add identified interpreter

@@ -2,7 +2,7 @@
 
 from typer.testing import CliRunner
 
-from ecpz.cli import app
+from ecpz.cli import app, get_own_directory
 
 runner = CliRunner()
 
@@ -63,12 +63,12 @@ def test_print(tmp_path):
     assert result.stdout == "6.283 1 false true\n"
 
 
-cpp_ecpz_test_source = """
+cpp_ecpz_test_source = r"""
 #include "ecpz/subprocess.hpp"
 
 int main() {
-    auto const result = subprocess::run({"ecpz", "print", "-n", "{}", "\\\"Hello, world!\\\""});
-    if (result.output != "Hello, world!") {
+    auto const result = subprocess::run({"ecpz", "print", "-c", "-n", "%s", "\"Hello,\\r\\n world!\""});
+    if (result.output != "Hello,\r\n world!") {
         std::cerr << "Unexpected result string: '" << result.output << "'" << std::endl;;
         return 1;
     }
@@ -89,6 +89,20 @@ def test_call_from_cpp(tmp_path):
         app,
         ["--clang-arg", "-std=c++23", "run", str(source_path)],
     )
-    # FIXME: on Mac, the result has a trailing \x01
-    assert result.stdout == "Hello, world!"
+    # check that line endings are preserved
+    assert result.stdout_bytes == b"Hello,\r\n world!"
     assert result.exit_code == 0
+
+
+def test_quine(tmp_path):
+    """Test the ecpz quine."""
+    ref_file_path = get_own_directory() / "ecpz" / "quine.cpp"
+    with open(ref_file_path, "rb") as f:
+        quine_code = f.read()
+
+    source_path = tmp_path / "q.cpp"
+    with open(source_path, "wb") as file:
+        file.write(quine_code)
+
+    result = runner.invoke(app, ["run", str(source_path), str(source_path)])
+    assert result.stdout_bytes == quine_code
