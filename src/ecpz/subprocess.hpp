@@ -20,11 +20,25 @@
 #define PATH_SEPARATOR ':'
 #endif
 
+// for forcing binary stdout/stderr:
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 // subprocess.h copy shipped with ecpz
 // (assuming its top level module dir is passed as include path):
 #include "ecpz/subprocess.h"
 
 namespace subprocess {
+
+/// Force binary output
+static void set_bin() {
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+#endif
+}
 
 struct Result {
     int exit_code = 0;

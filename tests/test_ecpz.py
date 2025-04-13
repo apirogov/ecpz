@@ -67,11 +67,13 @@ cpp_ecpz_test_source = r"""
 #include "ecpz/subprocess.hpp"
 
 int main() {
-    auto const result = subprocess::run({"ecpz", "print", "-c", "-n", "%s", "\"Hello,\\r\\n world!\""});
+    auto const result = subprocess::run({"ecpz", "print", "-b", "-c", "-n", "%s", "\"Hello,\\r\\n world!\""});
     if (result.output != "Hello,\r\n world!") {
         std::cerr << "Unexpected result string: '" << result.output << "'" << std::endl;;
         return 1;
     }
+
+    subprocess::set_bin();
     std::cout << result.output;
     std::cerr << result.err;
     return result.exit_code;

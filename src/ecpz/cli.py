@@ -134,7 +134,23 @@ def run(
 ):
     """Compile the provided C++ code (file or stdin) and run the resulting executable."""
     ctx.obj.cmd_args = args or []
-    print_bytes(compile_and_run(read_input(cmd_src).encode("utf-8"), ctx.obj))
+    result = compile_and_run(read_input(cmd_src).encode("utf-8"), ctx.obj)
+    print_bytes(result)
+
+
+binary_stdout_code = """
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
+
+static void set_bin() {
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+#endif
+}
+"""
 
 
 @app.command(name="print")
@@ -152,6 +168,10 @@ def std_print(
         bool,
         typer.Option("-c", "--c-printf", help="Use old-school C printf."),
     ] = False,
+    binary: Annotated[
+        bool,
+        typer.Option("-b", "--binary", help="Use binary mode for stdout."),
+    ] = False,
 ):
     """Evaluate C++23 expressions and print result using std::print(ln)."""
     ctx.obj.clang_args += ["-std=c++23"]
@@ -161,9 +181,14 @@ def std_print(
 
     print_header = "cstdio" if printf else "print"
     input_code = f"#include <{print_header}>\n"
+    input_code += binary_stdout_code
+
     if ctx.obj.prelude:
         input_code += f'#include "{Path(ctx.obj.prelude).resolve()}"\n'
+
     input_code += "\nint main(){\n"
+    if binary:
+        input_code += "\tset_bin();\n"
     if printf:
         input_code += f"\tprintf(\n\t\t{args}\n\t);"
     else:
